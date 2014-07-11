@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'ap'
+
+$:.unshift(File.join(File.dirname(__FILE__), "/../lib"))
+require 'bitcurex'
+
+parser = OptionParser.new do |o|
+  o.banner = "USAGE: #{$0} [options]"
+
+  o.on("-o", "--orderbook [CURRENCY]", "Show orderbook") do |p|
+    @orderbook ||= Bitcurex::Market.orderbook(p)
+    ap "Bids"
+    ap @orderbook[:bids][0...3]
+    ap "Asks"
+    ap @orderbook[:asks][0...3]
+  end
+
+  o.on("-t", "--trades [CURRENCY]", "Show trades") do |p|
+    ap Bitcurex::Market.trades(p)[0...3]
+  end
+
+  o.on("-s", "--stats [CURRENCY]", "Show statistics") do |p|
+    ap Bitcurex::Market.ticker(p)
+  end
+
+  o.on("--balance", "Show account balance") do |p|
+    ap @account.balance
+  end
+
+  o.on("--address", "Show account address") do |p|
+    ap @account.address
+  end
+
+  o.on("--orders", "Show account orders") do |p|
+    ap @account.orders
+  end
+
+  o.on("--transactions", "List transaction") do |p|
+    ap @account.transactions
+  end
+
+  o.on("--bid AMOUNT,PRICE", Array, "Bid BTC") do |p|
+    ap @account.bid(*p)
+  end
+
+  o.on("--ask AMOUNT,PRICE", Array, "Ask BTC") do |p|
+    ap @account.ask(*p)
+  end
+
+  o.on("--cancel OID,TYPE", Array, "Cancel order") do |p|
+    ap @account.cancel(*p)
+  end
+
+  o.on("-c", "--config FILE", "Load configuration file") do |p|
+    Bitcurex.configure(YAML::load_file(p))
+  end
+
+  o.on("-v", "--verbose", "Be more talkative") do |p|
+    Bitcurex.configure(:verbose => p)
+  end
+
+  o.on("-h", "--help", "Show help documentation") do |p|
+    puts o
+    exit
+  end
+end
+
+Bitcurex.configure(YAML::load_file('bitcurex.yml')) unless Bitcurex.configured?
+@account = Bitcurex::Account.setup
+parser.parse!
